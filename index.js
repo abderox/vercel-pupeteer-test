@@ -13,6 +13,16 @@ const compile = async function (templateName, data) {
   return hbs.compile(html)(data);
 }
 
+
+function base64Encode(file) {
+  return fs.readFileSync(file, { encoding: 'base64' });
+}
+
+const image = (filename) => {
+  return "data:image/png;base64," + base64Encode(filename);
+}
+
+
 const data_ = {
   test: {
       fullName: "student.fullName",
@@ -77,7 +87,7 @@ app.get("/api", async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
+app.listen(process.env.PORT || 8986, () => {
   console.log("Server started");
 });
 
