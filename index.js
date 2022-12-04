@@ -72,15 +72,18 @@ app.get("/api", async (req, res) => {
 
     await page.setContent(content);
     await page.emulateMediaType('screen');
-    await page.pdf({
-        path: data_.test.fileName,
+    const ress = await page.pdf({
         format: 'A4',
         landscape: true,
         printBackground: true,
-    });
+    })
+
+    console.log(ress)
     await browser.close();
     //send file
-    res.sendFile(data_.test.fileName);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf');
+    res.send(ress);
   } catch (err) {
     console.error(err);
     return null;
