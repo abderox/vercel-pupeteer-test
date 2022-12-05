@@ -3,6 +3,8 @@ const fs = require('fs-extra');
 const crypto = require('crypto');
 const hbs = require('handlebars');
 const path = require('path');
+const QRCode = require('qrcode');
+
 
 let chrome = {};
 let puppeteer;
@@ -23,25 +25,54 @@ const image = (filename) => {
 }
 
 
-const data_ = {
+var data_ = {
   test: {
-      fullName: "student.fullName",
-      image: image(path.join(process.cwd(), `certif_8.png`)),
-      qr_code: image(path.join(process.cwd(), `certif_8.png`)),
-      date :"1212121",
-      local : "Kech",
-      filiere :"kdkd",
-      cin: "student.cin",
-      cne: "student.cne",
-      mention: "student.mention",
-      titre_diplome : "kkeke",
-      ministere:  null,
-      presidence: null,
-      etablissement:  null,
-      fileName: path.join(process.cwd(),'test.pdf'),
+    fullName: "student.fullName",
+    image: image(path.join(process.cwd(), `certif_8.png`)),
+    qr_code: '',
+    date: "1212121",
+    local: "Kech",
+    filiere: "kdkd",
+    cin: "student.cin",
+    cne: "student.cne",
+    mention: "student.mention",
+    titre_diplome: "kkeke",
+    ministere: null,
+    presidence: null,
+    etablissement: null,
+    fileName: path.join(process.cwd(), 'test.pdf'),
 
   }
 };
+
+var qr_url = "https://e-certificate.vr4.ma/verification?hash=";
+const opts = {
+  errorCorrectionLevel: 'H',
+  type: 'terminal',
+  quality: 1,
+  margin: 1,
+  color: {
+    dark: '#208698',
+    light: '#FFF',
+  },
+  width: 100,
+  height: 100
+}
+
+// generate qr without storing it
+const func = async() => {
+  return new Promise((resolve, reject) => {
+    QRCode.toDataURL(qr_url, opts, function (err, url) {
+      if (err) {
+        reject(err);
+        
+        } else {
+          resolve(url);
+        }
+      })
+    })
+    
+}
 
 
 if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
@@ -50,6 +81,14 @@ if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
 } else {
   puppeteer = require("puppeteer");
 }
+
+app.get("/qr" ,
+  async (req, res) => {
+    const qr = await func();
+    //send peng image
+    // console.log(qr);
+    res.send(qr);
+  })
 
 app.get("/api", async (req, res) => {
   let options = {};
@@ -68,14 +107,16 @@ app.get("/api", async (req, res) => {
     let browser = await puppeteer.launch(options);
 
     let page = await browser.newPage();
+    data_.test.qr_code =  await func();
+   
     const content = await compile('index', data_);
 
     await page.setContent(content);
     await page.emulateMediaType('screen');
     const ress = await page.pdf({
-        format: 'A4',
-        landscape: true,
-        printBackground: true,
+      format: 'A4',
+      landscape: true,
+      printBackground: true,
     })
 
     console.log(ress)
